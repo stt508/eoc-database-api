@@ -1,5 +1,5 @@
 """
-Configuration for Oracle Database API Service
+Configuration for EOC Database API Service (Oracle)
 
 Handles environment variables and database connection settings
 for the FastAPI service that provides database access to AI agents.
@@ -8,14 +8,20 @@ for the FastAPI service that provides database access to AI agents.
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, field_validator
+from pydantic import Field
 from loguru import logger
 
 # Import Oracle driver for DSN creation
 try:
     import oracledb as cx_Oracle
+    logger.info("Using python-oracledb (recommended)")
 except ImportError:
-    import cx_Oracle
+    try:
+        import cx_Oracle
+        logger.warning("Using legacy cx_Oracle")
+    except ImportError:
+        logger.error("Neither oracledb nor cx_Oracle is installed!")
+
 
 class DatabaseConfig(BaseSettings):
     """Oracle Database Configuration"""
@@ -28,12 +34,12 @@ class DatabaseConfig(BaseSettings):
     )
     
     # Oracle Connection Settings
-    oracle_host: str = Field(..., description="Oracle database hostname")
-    oracle_port: int = Field(default=1521, description="Oracle database port") 
-    oracle_service_name: Optional[str] = Field(default=None, description="Oracle service name (use this OR sid)")
+    oracle_host: str = Field(..., env="ORACLE_HOST", description="Oracle database hostname")
+    oracle_port: int = Field(default=1521, env="ORACLE_PORT", description="Oracle database port") 
+    oracle_service_name: Optional[str] = Field(default=None, env="ORACLE_SERVICE_NAME", description="Oracle service name (use this OR sid)")
     oracle_sid: Optional[str] = Field(default=None, env="ORACLE_SID", description="Oracle SID (use this OR service_name)")
-    oracle_username: str = Field(..., description="Oracle database username")
-    oracle_password: str = Field(..., description="Oracle database password")
+    oracle_username: str = Field(..., env="ORACLE_USERNAME", description="Oracle database username")
+    oracle_password: str = Field(..., env="ORACLE_PASSWORD", description="Oracle database password")
     
     # Schema Configuration
     oracle_log_schema: str = Field(default="logs", env="ORACLE_LOG_SCHEMA")
@@ -53,8 +59,8 @@ class DatabaseConfig(BaseSettings):
         """Get Oracle DSN connection string
         
         Supports both SID and Service Name:
-        - If ORACLE_SID is set, uses SID format: host:port/sid
-        - Otherwise uses Service Name format: host:port/service_name
+        - If ORACLE_SID is set, uses SID format
+        - Otherwise uses Service Name format
         """
         if self.oracle_sid:
             # Using SID (legacy format)
@@ -69,6 +75,7 @@ class DatabaseConfig(BaseSettings):
         """Get full Oracle connection string"""
         return f"{self.oracle_username}/{self.oracle_password}@{self.get_dsn()}"
 
+
 class APIConfig(BaseSettings):
     """API Service Configuration"""
     
@@ -81,8 +88,8 @@ class APIConfig(BaseSettings):
     
     # API Server Settings
     api_host: str = Field(default="0.0.0.0", description="API server host")
-    api_port: int = Field(default=8001, description="API server port")
-    api_title: str = Field(default="Oracle Database API", description="API title")
+    api_port: int = Field(default=8000, description="API server port")
+    api_title: str = Field(default="EOC Database API", description="API title")
     api_version: str = Field(default="1.0.0", description="API version")
     
     # Environment
@@ -97,6 +104,7 @@ class APIConfig(BaseSettings):
     rate_limit_requests: int = Field(default=1000, env="RATE_LIMIT_REQUESTS")
     rate_limit_window: int = Field(default=3600, env="RATE_LIMIT_WINDOW")  # 1 hour
 
+
 class Config:
     """Main configuration combining all settings"""
     
@@ -108,10 +116,10 @@ class Config:
         try:
             self.database = DatabaseConfig()
             self.api = APIConfig()
-            logger.info("Configuration loaded successfully")
+            logger.info("✅ Configuration loaded successfully")
         except Exception as e:
-            logger.error(f"Failed to load configuration: {e}")
-            logger.error("Please ensure .env file exists with required variables")
+            logger.error(f"❌ Failed to load configuration: {e}")
+            logger.error("Please ensure environment variables are set")
             raise
     
     def is_ready(self) -> bool:
@@ -130,13 +138,13 @@ class Config:
             
             if is_valid:
                 conn_type = "SID" if self.database.oracle_sid else "Service Name"
-                logger.info(f"Configuration validation passed (using {conn_type})")
+                logger.info(f"✅ Configuration validated (using {conn_type})")
             else:
-                logger.warning("Configuration validation failed - missing required fields or connection identifier")
+                logger.warning("❌ Configuration validation failed")
             
             return is_valid
         except Exception as e:
-            logger.error(f"Configuration validation error: {e}")
+            logger.error(f"❌ Configuration validation error: {e}")
             return False
     
     def get_database_info(self) -> dict:
@@ -153,6 +161,6 @@ class Config:
             "pool_size": f"{self.database.oracle_pool_min}-{self.database.oracle_pool_max}"
         }
 
+
 # Global configuration instance
 config = Config()
-

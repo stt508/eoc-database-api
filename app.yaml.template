@@ -1,42 +1,38 @@
-# Databricks App Configuration Template
+# Databricks App Configuration Template (Oracle)
 # Copy this to app.yaml and fill in your values
 
 name: eoc-database-api
-description: FastAPI REST API for EOC Order Care database queries
+description: FastAPI REST API for EOC Order Care database queries (Oracle)
 
 # Start command
 command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
-# Environment variables
-# OPTION A: Use Databricks secrets (requires admin permissions)
-# env:
-#   - name: DB_SERVER
-#     value: "${secrets/eoc-secrets/db_server}"
-#   - name: DB_NAME
-#     value: "${secrets/eoc-secrets/db_name}"
-#   - name: DB_USERNAME
-#     value: "${secrets/eoc-secrets/db_username}"
-#   - name: DB_PASSWORD
-#     value: "${secrets/eoc-secrets/db_password}"
-
-# OPTION B: Use direct values (less secure, but works without admin)
-# ⚠️ Copy this file to app.yaml and replace values below
+# Environment variables for Oracle connection
+# Replace the values below with your actual Oracle connection details
 env:
-  - name: DB_DRIVER
-    value: "ODBC Driver 18 for SQL Server"
-  - name: DB_SERVER
-    value: "YOUR_SQL_SERVER_HERE"
-  - name: DB_NAME
-    value: "YOUR_DATABASE_NAME_HERE"
-  - name: DB_USERNAME
-    value: "YOUR_USERNAME_HERE"
-  - name: DB_PASSWORD
-    value: "YOUR_PASSWORD_HERE"
-  - name: DB_TRUST_CERTIFICATE
-    value: "yes"
+  - name: ORACLE_HOST
+    value: "your-oracle-server.corp.pvt"  # ⚠️ REPLACE
+  - name: ORACLE_PORT
+    value: "1521"
+  - name: ORACLE_SID
+    value: "YOUR_SID_HERE"  # ⚠️ REPLACE (e.g., OTEST01)
+  # OR use ORACLE_SERVICE_NAME instead of ORACLE_SID:
+  # - name: ORACLE_SERVICE_NAME
+  #   value: "YOUR_SERVICE_NAME_HERE"
+  - name: ORACLE_USERNAME
+    value: "YOUR_USERNAME_HERE"  # ⚠️ REPLACE
+  - name: ORACLE_PASSWORD
+    value: "YOUR_PASSWORD_HERE"  # ⚠️ REPLACE
+  - name: ORACLE_POOL_MIN
+    value: "2"
+  - name: ORACLE_POOL_MAX
+    value: "10"
+  - name: ORACLE_POOL_INCREMENT
+    value: "2"
+  - name: LOG_LEVEL
+    value: "INFO"
 
 # Resources
 resources:
   cpu: "1"
   memory: "2Gi"
-
