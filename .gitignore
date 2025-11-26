@@ -15,6 +15,10 @@ ENV/
 *.env
 environment_template.txt
 
+# App configuration with credentials (SENSITIVE!)
+app.yaml
+app-config.yaml
+
 # Logs
 *.log
 logs/
